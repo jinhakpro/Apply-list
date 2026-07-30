@@ -132,7 +132,7 @@ async function appendRows(sheetId: string, accessToken: string, rows: (string | 
   }
 }
 
-export default async function () {
+async function main() {
   const clientEmail = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_EMAIL");
   const privateKey = Deno.env.get("GOOGLE_PRIVATE_KEY");
   const sheetId = Deno.env.get("GOOGLE_SHEET_ID");
@@ -164,3 +164,5 @@ export default async function () {
     `조회 ${items.length}건 중 신규 ${newRows.length}건 추가 완료 (${new Date().toISOString()})`,
   );
 }
+
+export default main;
