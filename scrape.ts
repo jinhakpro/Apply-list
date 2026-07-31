@@ -12,7 +12,8 @@
 //     (https://docs.google.com/spreadsheets/d/<이 부분>/edit)
 //   GMAIL_USER                    - 발신 Gmail 주소 (예: jinhakapplyhelp@gmail.com)
 //   GMAIL_APP_PASSWORD            - Gmail 앱 비밀번호 (16자리)
-//   EMAIL_RECIPIENTS              - (선택) 수신자 이메일, 콤마로 구분. 미설정 시 기본 수신자 사용
+//   EMAIL_RECIPIENTS              - (선택) 신규 공고 알림 수신자 이메일, 콤마로 구분. 미설정 시 기본 수신자 사용
+//   D3_EMAIL_RECIPIENTS           - (선택) D-3 마감 알림 수신자 이메일, 콤마로 구분. 미설정 시 cgh@jinhakapply.com
 
 import nodemailer from "npm:nodemailer@6.9.14";
 
@@ -30,6 +31,7 @@ const SHEET_CONTRACT = "광고배너 계약 여부";
 
 const DEFAULT_EMAIL_RECIPIENTS =
   "cgh@jinhakapply.com, magi77@jinhakapply.com, yjkim1014@jinhakapply.com, psj@jinhakapply.com";
+const DEFAULT_D3_RECIPIENTS = "cgh@jinhakapply.com";
 
 const SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets";
 
@@ -584,6 +586,126 @@ async function checkAndSendEmails(sheetId: string, accessToken: string) {
   console.log(`이메일 발송 완료: ${sentCount}건`);
 }
 
+/* ========== D-3 마감 알림 (기존 "D-3 email.gs" 포팅) ========== */
+
+interface D3Target {
+  id: string;
+  org: string;
+  title: string;
+  link: string;
+  rowNumber: number;
+}
+
+function buildD3Html(targets: D3Target[]): string {
+  let html = `
+    <div style="font-family: Arial; font-size: 14px;">
+      <h2>📢 즉시지원 마감 D-3 알림</h2>
+      <p>스펙통계 소셜발행할 타이밍~</p>
+      <hr>
+  `;
+
+  for (const item of targets) {
+    html += `
+      <p style="line-height:2;">
+        <span style="font-size:18px;"><b>📌 공고 정보</b></span>
+      </p>
+
+      <table style="width:100%; border-collapse: collapse;" border="1">
+        <tbody>
+          <tr>
+            <td style="background:#f6f6f6; padding:8px; width:20%;">기관명</td>
+            <td style="padding:8px;">${item.org}</td>
+          </tr>
+          <tr>
+            <td style="background:#f6f6f6; padding:8px;">공고명</td>
+            <td style="padding:8px;">${item.title}</td>
+          </tr>
+          <tr>
+            <td style="background:#f6f6f6; padding:8px;">링크</td>
+            <td style="padding:8px;">
+              <a href="${item.link}">
+                ${item.link}
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color:#f9f9f9; padding:8px;">MOA 통계 다운로드</td>
+            <td style="padding:8px;"><a href="https://moa.jinhakapply.com/Trecruit/ImmediateApply?data=%7B%22searchTitle%22%3Anull,%22page%22%3A0,%22tab%22%3A%22all%22%7D">바로가기</a></td>
+          </tr>
+          <tr>
+            <td style="background-color:#f9f9f9; padding:8px;">구글시트</td>
+            <td style="padding:8px;"><a href="https://docs.google.com/spreadsheets/d/1L_oGcvWerbSI6Gu5l8zlmwqWTWW3dK7URlMuB0foKHA/edit?gid=0#gid=0">바로가기</a></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <br><hr><br>
+    `;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+async function sendD3Reminders(sheetId: string, accessToken: string) {
+  const gmailUser = Deno.env.get("GMAIL_USER");
+  const gmailAppPassword = Deno.env.get("GMAIL_APP_PASSWORD");
+  if (!gmailUser || !gmailAppPassword) {
+    console.log("GMAIL_USER / GMAIL_APP_PASSWORD 미설정 — D-3 알림 단계를 건너뜁니다.");
+    return;
+  }
+  const recipient = Deno.env.get("D3_EMAIL_RECIPIENTS") || DEFAULT_D3_RECIPIENTS;
+
+  const rows = await getSheetValues(sheetId, accessToken, `${SHEET_LIST}!A2:G`);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const targets: D3Target[] = [];
+
+  rows.forEach((row, index) => {
+    const [id, org, title, link, , deadlineStr, status] = row;
+
+    if (!deadlineStr || !status) return;
+    if (String(status).trim() !== "미발송") return;
+
+    const deadline = new Date(String(deadlineStr));
+    if (Number.isNaN(deadline.getTime())) return;
+    deadline.setHours(0, 0, 0, 0);
+
+    const sendDate = new Date(deadline);
+    sendDate.setDate(sendDate.getDate() - 3);
+    sendDate.setHours(0, 0, 0, 0);
+    while (sendDate.getDay() === 0 || sendDate.getDay() === 6) {
+      sendDate.setDate(sendDate.getDate() - 1);
+    }
+
+    if (sendDate.getTime() === today.getTime()) {
+      targets.push({
+        id: String(id || ""),
+        org: String(org || ""),
+        title: String(title || ""),
+        link: String(link || ""),
+        rowNumber: index + 2,
+      });
+    }
+  });
+
+  if (targets.length === 0) {
+    console.log("D-3 대상 없음");
+    return;
+  }
+
+  const html = buildD3Html(targets);
+  await sendEmail(gmailUser, gmailAppPassword, recipient, "즉시지원 마감 D-3 자동 알림", html);
+
+  for (const t of targets) {
+    await updateSheetRange(sheetId, accessToken, `${SHEET_LIST}!G${t.rowNumber}`, [["발송완료"]]);
+  }
+
+  console.log(`D-3 이메일 발송 완료: ${targets.length}건`);
+}
+
 /* ========== 메인 ========== */
 
 async function main() {
@@ -724,6 +846,7 @@ async function main() {
   );
 
   await checkAndSendEmails(sheetId, accessToken);
+  await sendD3Reminders(sheetId, accessToken);
 }
 
 export default main;
