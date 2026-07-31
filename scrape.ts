@@ -10,6 +10,11 @@
 //   GOOGLE_PRIVATE_KEY            - 서비스 계정 private_key (PEM, \n 포함 그대로)
 //   GOOGLE_SHEET_ID               - 스프레드시트 ID
 //     (https://docs.google.com/spreadsheets/d/<이 부분>/edit)
+//   GMAIL_USER                    - 발신 Gmail 주소 (예: jinhakapplyhelp@gmail.com)
+//   GMAIL_APP_PASSWORD            - Gmail 앱 비밀번호 (16자리)
+//   EMAIL_RECIPIENTS              - (선택) 수신자 이메일, 콤마로 구분. 미설정 시 기본 수신자 사용
+
+import nodemailer from "npm:nodemailer@6.9.14";
 
 const JINHAKPRO_LIST_API =
   "https://www.jinhakpro.com/api/applicant/recruit/sub-list?isOnlyOnlineApply=true&bookmarkSortType=1&majorCategoryCode=&recruitTypeCode=&sortType=1";
@@ -21,6 +26,10 @@ const SHEET_AD = "광고배너 등록";
 const SHEET_CHAT = "오카방 메시지";
 const SHEET_SOCIAL = "소셜발행";
 const SHEET_COLOR_DB = "배너 배경색 DB";
+const SHEET_CONTRACT = "광고배너 계약 여부";
+
+const DEFAULT_EMAIL_RECIPIENTS =
+  "cgh@jinhakapply.com, magi77@jinhakapply.com, yjkim1014@jinhakapply.com, psj@jinhakapply.com";
 
 const SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets";
 
@@ -229,6 +238,352 @@ function buildDdayText(applyEndISO: string): string {
   return diff > 0 ? `마감 D-${diff}` : diff === 0 ? "마감일 D-day" : "마감";
 }
 
+/* ========== 이메일 발송 (기존 email.gs / email_template.html 포팅) ========== */
+
+const EMAIL_TEMPLATE_HTML = `<!DOCTYPE html>
+<html>
+  <p style="line-height:2;">
+  <span style="font-size:30px;"><b>신규 즉시지원 공고 알림</b></span>
+</p>
+<p style="line-height:2;">
+  <span style="font-size:18px;">새로운 즉시지원 공고가 등록되었습니다.야호~ </span>
+</p>
+<br><br>
+
+<p style="line-height:2;">
+  <span style="font-size:24px;"><b>공고 정보</b></span>
+</p>
+
+<table class="table table-bordered" style="width:100%; text-align:center;">
+  <tbody>
+    <tr>
+      <td style="background-color:#f9f9f9;">기관명</td>
+      <td data-type="즉시지원 리스트_기관명">&nbsp;</td>
+    </tr>
+    <tr>
+      <td style="background-color:#f9f9f9;">공고명</td>
+      <td data-type="즉시지원 리스트_공고명">&nbsp;</td>
+    </tr>
+    <tr>
+      <td style="background-color:#f9f9f9;">공고ID</td>
+      <td data-type="즉시지원 리스트_공고ID">&nbsp;</td>
+    </tr>
+    <tr>
+      <td style="background-color:#f9f9f9;">링크</td>
+      <td data-type="즉시지원 리스트_링크">&nbsp;</td>
+    </tr>
+  </tbody>
+</table>
+
+<br><br>
+
+<p style="line-height:2;">
+  <span style="font-size:24px;"><b>1. 오픈카톡방 메시지</b></span>
+</p>
+<p style="line-height:2;">
+  <span style="font-size:18px;">※ 방금 뜬 따끈한 즉시지원 공고 배달드립니다 ※</span>
+</p>
+<p style="line-height:2;">
+  <span style="font-size:18px;">오직 진학프로에서만 지원 가능!</span>
+</p>
+<p data-type="오카방 메시지_[기관명]공고명" style="line-height:2;">
+ </p>
+ <!-- 오카방 링크 (별도 p, data-type을 p에 직접 지정) -->
+<p data-type="오카방 메시지_링크" style="line-height:2;"><span style="font-size:18px;">&nbsp;</span></p>
+
+<br><br>
+
+<p style="line-height:2;">
+  <span style="font-size:24px;"><b>2. 광고 배너 등록</b></span>
+</p>
+<p data-type="광고배너_계약여부"></p>
+<table class="table table-bordered" style="width:100%; text-align:center;">
+  <tbody>
+    <tr>
+      <td style="background-color:#f9f9f9;">제목</td>
+      <td data-type="광고배너 등록_제목">&nbsp;</td>
+    </tr>
+    <tr>
+      <td style="background-color:#f9f9f9;">내용</td>
+      <td data-type="광고배너 등록_내용">&nbsp;</td>
+    </tr>
+    <tr>
+      <td style="background-color:#f9f9f9;">로고 이미지</td>
+      <td data-type="광고배너 등록_로고이미지파일">&nbsp;</td>
+    </tr>
+    <tr>
+      <td style="background-color:#f9f9f9;">배경색</td>
+      <td data-type="광고배너 등록_배경색">&nbsp;</td>
+    </tr>
+    <tr>
+      <td style="background-color:#f9f9f9;">이동 링크</td>
+      <td data-type="광고배너 등록_이동 링크">&nbsp;</td>
+    </tr>
+    <tr>
+      <td style="background-color:#f9f9f9;">배너 운영 기간</td>
+      <td data-type="광고배너 등록_배너운영기간">&nbsp;</td>
+    </tr>
+  </tbody>
+</table>
+
+<br><br>
+
+<p style="line-height:2;">
+  <span style="font-size:24px;"><b>3. 소셜 발행</b></span>
+  <span style="font-size:15px;"> <a href="https://business.facebook.com/latest/home?business_id=919715559676223&asset_id=514834018372928"> [META 바로가기] </a>
+</p>
+
+<!-- [소셜 발행] 블록 교체 -->
+<p style="line-height:2;">
+  <span style="font-size:15px;">1분 전에 뜬 따끈한 즉시지원 공고 배달드립니다♨️</span> <br> <span> 오직 진학프로에서만 지원 가능! </span>
+</p>
+
+<p data-type="소셜발행_기관명_공고명" style="line-height:2;" ><span style="font-size:15px;">&nbsp;</span></p>
+<p data-type="소셜발행_facebook링크" style="line-height:2;"><span style="font-size:15px;">&nbsp;</span></p>
+
+<p style="line-height:2;">
+  <span style="font-size:15px;">· 모집전공: </span>
+  <span data-type="소셜발행_모집전공" style="font-size:15px;">&nbsp;</span><br>
+  <span style="font-size:15px;">· 지원자격: </span>
+  <span data-type="소셜발행_학력" style="font-size:15px;">&nbsp;</span><br>
+  <span style="font-size:15px;">· 접수마감: </span>
+  <span data-type="소셜발행_접수마감일" style="font-size:15px;">&nbsp;</span><br>
+  <span style="font-size:15px;">· 근무지역: </span>
+  <span data-type="소셜발행_지역" style="font-size:15px;">&nbsp;</span>
+</p>
+
+<p style="line-height:2;">
+  <span style="font-size:15px;">진학프로(@jinhakpro) 팔로우하고 석사·박사를 위한 고급 채용 정보를 받아 보세요.</span>
+</p>
+
+
+<br><br>
+
+<table class="table table-bordered" style="width:100%; text-align:center;">
+  <tbody>
+    <tr style="background-color:#e8f2fd;">
+      <td>캐치 공고등록도 잊지 마세요 ^^</td>
+    </tr>
+  </tbody>
+</table>
+
+
+</html>
+`;
+
+interface EmailData {
+  공고ID: string;
+  기관명: string;
+  공고명: string;
+  공고링크: string;
+  bannerContract: string;
+  오카방제목: string;
+  오카방링크: string;
+  광고제목: string;
+  광고내용: string;
+  로고이미지파일: string;
+  광고배경색: string;
+  광고링크: string;
+  배너운영기간: string;
+  소셜기관명: string;
+  소셜공고명: string;
+  facebookLink: string;
+  majorsText: string;
+  degree: string;
+  applyEnd: string;
+  region: string;
+  dday: string;
+  소셜공고ID: string;
+}
+
+function buildEmailHtml(d: EmailData): string {
+  let html = EMAIL_TEMPLATE_HTML;
+
+  html = html
+    .replace(/<td[^>]*data-type="즉시지원 리스트_기관명"[^>]*>[\s\S]*?<\/td>/, `<td>${d.기관명}</td>`)
+    .replace(/<td[^>]*data-type="즉시지원 리스트_공고명"[^>]*>[\s\S]*?<\/td>/, `<td>${d.공고명}</td>`)
+    .replace(/<td[^>]*data-type="즉시지원 리스트_공고ID"[^>]*>[\s\S]*?<\/td>/, `<td>${d.공고ID}</td>`)
+    .replace(
+      /<td[^>]*data-type="즉시지원 리스트_링크"[^>]*>[\s\S]*?<\/td>/,
+      `<td><a href="${d.공고링크}">${d.공고링크}</a></td>`,
+    );
+
+  html = html.replace(
+    /<p[^>]*data-type="광고배너_계약여부"[^>]*>[\s\S]*?<\/p>/,
+    `<p data-type="광고배너_계약여부" style="line-height:2; font-size:16px;">${d.bannerContract}</p>`,
+  );
+
+  html = html
+    .replace(
+      /<p[^>]*data-type="오카방 메시지_\[기관명\]공고명"[^>]*>[\s\S]*?<\/p>/,
+      `<p><span>${d.오카방제목 || `[${d.기관명}] ${d.공고명}`}</span></p>`,
+    )
+    .replace(
+      /<p[^>]*data-type="오카방 메시지_링크"[^>]*>[\s\S]*?<\/p>/,
+      `<p><span><a href="${d.오카방링크 || d.공고링크}">${d.오카방링크 || d.공고링크}</a></span></p>`,
+    );
+
+  html = html
+    .replace(/<td[^>]*data-type="광고배너 등록_제목"[^>]*>[\s\S]*?<\/td>/, `<td>${d.광고제목 || ""}</td>`)
+    .replace(/<td[^>]*data-type="광고배너 등록_내용"[^>]*>[\s\S]*?<\/td>/, `<td>${d.광고내용 || ""}</td>`)
+    .replace(
+      /<td[^>]*data-type="광고배너 등록_로고이미지파일"[^>]*>[\s\S]*?<\/td>/,
+      `<td><span style="word-break: break-all;">${d.로고이미지파일 || ""}</span></td>`,
+    )
+    .replace(/<td[^>]*data-type="광고배너 등록_배경색"[^>]*>[\s\S]*?<\/td>/, `<td>${d.광고배경색 || ""}</td>`)
+    .replace(
+      /<td[^>]*data-type="광고배너 등록_이동 링크"[^>]*>[\s\S]*?<\/td>/,
+      `<td><a href="${d.광고링크 || d.공고링크}">${d.광고링크 || d.공고링크}</a></td>`,
+    )
+    .replace(
+      /<td[^>]*data-type="광고배너 등록_배너운영기간"[^>]*>[\s\S]*?<\/td>/,
+      `<td>${d.배너운영기간 || ""}</td>`,
+    );
+
+  html = html
+    .replace(
+      /<p[^>]*data-type="소셜발행_기관명_공고명"[^>]*>[\s\S]*?<\/p>/,
+      `<p><span>[${d.소셜기관명}] ${d.소셜공고명}</span></p>`,
+    )
+    .replace(
+      /<p[^>]*data-type="소셜발행_facebook링크"[^>]*>[\s\S]*?<\/p>/,
+      `<p><a href="${d.facebookLink}">${d.facebookLink}</a></p>`,
+    )
+    .replace(
+      /<(td|span)[^>]*data-type="소셜발행_모집전공"[^>]*>[\s\S]*?<\/\1>/,
+      `<$1>${d.majorsText || ""}</$1>`,
+    )
+    .replace(/<(td|span)[^>]*data-type="소셜발행_학력"[^>]*>[\s\S]*?<\/\1>/, `<$1>${d.degree || ""}</$1>`)
+    .replace(/<(td|span)[^>]*data-type="소셜발행_지역"[^>]*>[\s\S]*?<\/\1>/, `<$1>${d.region || ""}</$1>`)
+    .replace(
+      /<(td|span)[^>]*data-type="소셜발행_접수마감일"[^>]*>[\s\S]*?<\/\1>/,
+      `<$1>${d.applyEnd || ""}</$1>`,
+    )
+    .replace(/<(td|span)[^>]*data-type="소셜발행_DDAY"[^>]*>[\s\S]*?<\/\1>/, `<$1>${d.dday || ""}</$1>`);
+
+  html = html.replace(
+    /<td[^>]*data-type="소셜발행_공고ID"[^>]*>[\s\S]*?<\/td>/,
+    `<td>${d.소셜공고ID}</td>`,
+  );
+
+  return html;
+}
+
+async function sendEmail(gmailUser: string, gmailAppPassword: string, to: string, subject: string, html: string) {
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: { user: gmailUser, pass: gmailAppPassword },
+  });
+  await transporter.sendMail({ from: gmailUser, to, subject, html });
+}
+
+async function checkAndSendEmails(sheetId: string, accessToken: string) {
+  const gmailUser = Deno.env.get("GMAIL_USER");
+  const gmailAppPassword = Deno.env.get("GMAIL_APP_PASSWORD");
+  if (!gmailUser || !gmailAppPassword) {
+    console.log("GMAIL_USER / GMAIL_APP_PASSWORD 미설정 — 이메일 발송 단계를 건너뜁니다.");
+    return;
+  }
+  const recipients = Deno.env.get("EMAIL_RECIPIENTS") || DEFAULT_EMAIL_RECIPIENTS;
+
+  const [listRows, adRows, chatRows, socialRows, contractRows] = await Promise.all([
+    getSheetValues(sheetId, accessToken, `${SHEET_LIST}!A2:G`),
+    getSheetValues(sheetId, accessToken, `${SHEET_AD}!A2:G`),
+    getSheetValues(sheetId, accessToken, `${SHEET_CHAT}!A2:C`),
+    getSheetValues(sheetId, accessToken, `${SHEET_SOCIAL}!A2:Q`),
+    getSheetValues(sheetId, accessToken, `${SHEET_CONTRACT}!A2:B`),
+  ]);
+
+  const byId = (rows: string[][]) => {
+    const map = new Map<string, string[]>();
+    for (const row of rows) if (row[0]) map.set(String(row[0]).trim(), row);
+    return map;
+  };
+  const adMap = byId(adRows);
+  const chatMap = byId(chatRows);
+  const socialMap = byId(socialRows);
+
+  const contractMap = new Map<string, string>();
+  for (const row of contractRows) if (row[0]) contractMap.set(String(row[0]).trim(), String(row[1] ?? ""));
+
+  let sentCount = 0;
+
+  for (let i = 0; i < listRows.length; i++) {
+    const row = listRows[i];
+    const 공고ID = String(row[0] || "").trim();
+    if (!공고ID) continue;
+    const status = String(row[4] || "").trim();
+    if (status !== "미발송") continue;
+
+    const 기관명 = String(row[1] || "").trim();
+    const 공고명 = String(row[2] || "").trim();
+    const 공고링크 = String(row[3] || "").trim();
+    if (!기관명 || !공고명 || !공고링크) {
+      console.warn(`필수값 부족으로 발송 보류: 공고ID=${공고ID}`);
+      continue;
+    }
+
+    const rowNumber = i + 2; // A2부터 시작
+
+    try {
+      const contractYn = (contractMap.get(기관명) || "").trim();
+      const bannerContract = contractYn === "Y" ? "배너 등록O" : "배너 등록X";
+
+      const ad = adMap.get(공고ID) || [];
+      const [, 광고제목, 광고내용, 로고이미지파일, 광고배경색, 광고링크, 배너운영기간] = ad;
+
+      const chat = chatMap.get(공고ID) || [];
+      const [, 오카방제목, 오카방링크] = chat;
+
+      const social = socialMap.get(공고ID) || [];
+      const 소셜기관명 = social[1] || "";
+      const 소셜공고명 = social[2] || "";
+      const majorsArr = social.slice(3, 11).map((v) => String(v || "").trim()).filter(Boolean);
+      const majorEtc = String(social[11] || "").trim();
+      const degree = String(social[12] || "").trim();
+      const applyEnd = String(social[13] || "").trim();
+      const region = String(social[14] || "").trim();
+      const dday = String(social[15] || "").trim();
+      const facebookLink = String(social[16] || "").trim();
+      const majorsText = [...majorsArr, majorEtc].filter(Boolean).join(", ");
+
+      const html = buildEmailHtml({
+        공고ID,
+        기관명,
+        공고명,
+        공고링크,
+        bannerContract,
+        오카방제목: 오카방제목 || "",
+        오카방링크: 오카방링크 || "",
+        광고제목: 광고제목 || "",
+        광고내용: 광고내용 || "",
+        로고이미지파일: 로고이미지파일 || "",
+        광고배경색: 광고배경색 || "",
+        광고링크: 광고링크 || "",
+        배너운영기간: 배너운영기간 || "",
+        소셜기관명,
+        소셜공고명,
+        facebookLink,
+        majorsText,
+        degree,
+        applyEnd,
+        region,
+        dday,
+        소셜공고ID: social[0] || 공고ID,
+      });
+
+      await sendEmail(gmailUser, gmailAppPassword, recipients, `[즉시지원 알림] ${기관명} ${공고명}`, html);
+
+      await updateSheetRange(sheetId, accessToken, `${SHEET_LIST}!E${rowNumber}`, [["발송완료"]]);
+      sentCount++;
+    } catch (err) {
+      console.error(`이메일 발송 실패 (공고ID: ${공고ID}):`, err instanceof Error ? err.message : err);
+    }
+  }
+
+  console.log(`이메일 발송 완료: ${sentCount}건`);
+}
+
 /* ========== 메인 ========== */
 
 async function main() {
@@ -367,6 +722,8 @@ async function main() {
   console.log(
     `조회 ${items.length}건 중 신규 ${newItems.length}건, 상세 처리 성공 ${successCount}건 (${new Date().toISOString()})`,
   );
+
+  await checkAndSendEmails(sheetId, accessToken);
 }
 
 export default main;
