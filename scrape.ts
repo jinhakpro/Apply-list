@@ -266,15 +266,27 @@ async function main() {
     const recruitIdx = String(item.recruitIdx);
     const 공고링크 = `https://www.jinhakpro.com/recruit/${recruitIdx}`;
 
+    let detail: any = null;
+    let applyEndISO = "";
+    try {
+      detail = await fetchRecruitDetail(recruitIdx);
+      applyEndISO = String(detail?.recruitDetail?.recruitData?.apply_end_date || "").trim();
+    } catch (err) {
+      console.error(
+        `상세 조회 실패 (공고ID: ${recruitIdx}):`,
+        err instanceof Error ? err.message : err,
+      );
+    }
+
     // 1) 즉시지원 리스트 (상세 API 실패해도 최소한 이 행은 남긴다)
     await appendToSheet(sheetId, accessToken, SHEET_LIST, [
-      [recruitIdx, item.organName, item.recruitTitle, 공고링크, "미발송"],
+      [recruitIdx, item.organName, item.recruitTitle, 공고링크, "미발송", applyEndISO, "미발송"],
     ]);
 
+    if (!detail?.recruitDetail) continue;
+
     try {
-      const detail = await fetchRecruitDetail(recruitIdx);
-      const rd = detail?.recruitDetail;
-      if (!rd) throw new Error("recruitDetail 없음");
+      const rd = detail.recruitDetail;
 
       const rData = rd.recruitData || {};
       const wc = rData.work_condition || {};
@@ -298,7 +310,6 @@ async function main() {
           : `${eduLabel} 이상`
         : "";
 
-      const applyEndISO = String(rData.apply_end_date || "").trim();
       const applyStartISO = String(rData.apply_start_date || "").trim();
       const 배너운영기간Text = applyStartISO && applyEndISO
         ? `${toDotDate(applyStartISO)} ~ ${toDotDate(applyEndISO)}`
