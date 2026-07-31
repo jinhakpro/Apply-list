@@ -244,132 +244,135 @@ function buildDdayText(applyEndISO: string): string {
 
 const EMAIL_TEMPLATE_HTML = `<!DOCTYPE html>
 <html>
-  <p style="line-height:2;">
-  <span style="font-size:30px;"><b>신규 즉시지원 공고 알림</b></span>
-</p>
-<p style="line-height:2;">
-  <span style="font-size:18px;">새로운 즉시지원 공고가 등록되었습니다.야호~ </span>
-</p>
-<br><br>
+<body style="margin:0; padding:24px 12px; background-color:#f3f4f6; font-family:'Apple SD Gothic Neo','Malgun Gothic',Arial,sans-serif;">
+<div style="max-width:640px; margin:0 auto; background-color:#ffffff; border-radius:12px; overflow:hidden; border:1px solid #e5e7eb;">
 
-<p style="line-height:2;">
-  <span style="font-size:24px;"><b>공고 정보</b></span>
-</p>
+  <!-- 헤더 -->
+  <div style="background-color:#2563eb; padding:28px 24px;">
+    <p style="margin:0; color:#ffffff; font-size:21px; font-weight:700;">🔔 신규 즉시지원 공고 알림</p>
+    <p style="margin:6px 0 0; color:#dbeafe; font-size:13px;">새로운 즉시지원 공고가 등록되었습니다. 야호~</p>
+  </div>
 
-<table class="table table-bordered" style="width:100%; text-align:center;">
-  <tbody>
-    <tr>
-      <td style="background-color:#f9f9f9;">기관명</td>
-      <td data-type="즉시지원 리스트_기관명">&nbsp;</td>
-    </tr>
-    <tr>
-      <td style="background-color:#f9f9f9;">공고명</td>
-      <td data-type="즉시지원 리스트_공고명">&nbsp;</td>
-    </tr>
-    <tr>
-      <td style="background-color:#f9f9f9;">공고ID</td>
-      <td data-type="즉시지원 리스트_공고ID">&nbsp;</td>
-    </tr>
-    <tr>
-      <td style="background-color:#f9f9f9;">링크</td>
-      <td data-type="즉시지원 리스트_링크">&nbsp;</td>
-    </tr>
-  </tbody>
-</table>
+  <div style="padding:24px;">
 
-<br><br>
+    <!-- 공고 정보 -->
+    <p style="margin:0 0 12px; font-size:16px; font-weight:700; color:#111827; border-left:4px solid #2563eb; padding-left:10px;">공고 정보</p>
+    <table style="width:100%; border-collapse:collapse; margin-bottom:28px;">
+      <tbody>
+        <tr>
+          <td style="background-color:#f9fafb; padding:10px 12px; font-size:13px; color:#6b7280; width:92px; border-bottom:1px solid #eef0f2; border-radius:6px 0 0 0;">기관명</td>
+          <td data-type="즉시지원 리스트_기관명" style="padding:10px 12px; font-size:14px; color:#111827; border-bottom:1px solid #eef0f2;">&nbsp;</td>
+        </tr>
+        <tr>
+          <td style="background-color:#f9fafb; padding:10px 12px; font-size:13px; color:#6b7280; border-bottom:1px solid #eef0f2;">공고명</td>
+          <td data-type="즉시지원 리스트_공고명" style="padding:10px 12px; font-size:14px; color:#111827; border-bottom:1px solid #eef0f2;">&nbsp;</td>
+        </tr>
+        <tr>
+          <td style="background-color:#f9fafb; padding:10px 12px; font-size:13px; color:#6b7280; border-bottom:1px solid #eef0f2;">공고ID</td>
+          <td data-type="즉시지원 리스트_공고ID" style="padding:10px 12px; font-size:14px; color:#111827; border-bottom:1px solid #eef0f2;">&nbsp;</td>
+        </tr>
+        <tr>
+          <td style="background-color:#f9fafb; padding:10px 12px; font-size:13px; color:#6b7280;">링크</td>
+          <td data-type="즉시지원 리스트_링크" style="padding:10px 12px; font-size:13px; word-break:break-all;">&nbsp;</td>
+        </tr>
+      </tbody>
+    </table>
 
-<p style="line-height:2;">
-  <span style="font-size:24px;"><b>1. 오픈카톡방 메시지</b></span>
-</p>
-<p style="line-height:2;">
-  <span style="font-size:18px;">※ 방금 뜬 따끈한 즉시지원 공고 배달드립니다 ※</span>
-</p>
-<p style="line-height:2;">
-  <span style="font-size:18px;">오직 진학프로에서만 지원 가능!</span>
-</p>
-<p data-type="오카방 메시지_[기관명]공고명" style="line-height:2;">
- </p>
- <!-- 오카방 링크 (별도 p, data-type을 p에 직접 지정) -->
-<p data-type="오카방 메시지_링크" style="line-height:2;"><span style="font-size:18px;">&nbsp;</span></p>
+    <!-- 1. 오픈카톡방 메시지 -->
+    <p style="margin:0 0 6px; font-size:16px; font-weight:700; color:#111827; border-left:4px solid #10b981; padding-left:10px;">1. 오픈카톡방 메시지</p>
+    <p style="margin:0 0 12px; font-size:12px; color:#6b7280;">※ 방금 뜬 따끈한 즉시지원 공고 배달드립니다 ※ 오직 진학프로에서만 지원 가능!</p>
+    <div style="background-color:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:14px 16px; margin-bottom:28px;">
+      <p data-type="오카방 메시지_[기관명]공고명" style="margin:0 0 6px; font-size:14px; font-weight:600; color:#111827;">&nbsp;</p>
+      <p data-type="오카방 메시지_링크" style="margin:0; font-size:13px; color:#2563eb; word-break:break-all;"><span>&nbsp;</span></p>
+    </div>
 
-<br><br>
+    <!-- 2. 광고 배너 등록 -->
+    <p style="margin:0 0 8px; font-size:16px; font-weight:700; color:#111827; border-left:4px solid #f59e0b; padding-left:10px;">2. 광고 배너 등록</p>
+    <p data-type="광고배너_계약여부" style="margin:0 0 14px; display:inline-block; background-color:#fef3c7; color:#92400e; font-size:12px; font-weight:700; padding:4px 10px; border-radius:999px;"></p>
+    <table style="width:100%; border-collapse:collapse; margin-bottom:28px;">
+      <tbody>
+        <tr>
+          <td style="background-color:#f9fafb; padding:10px 12px; font-size:13px; color:#6b7280; width:92px; border-bottom:1px solid #eef0f2;">제목</td>
+          <td data-type="광고배너 등록_제목" style="padding:10px 12px; font-size:14px; border-bottom:1px solid #eef0f2;">&nbsp;</td>
+        </tr>
+        <tr>
+          <td style="background-color:#f9fafb; padding:10px 12px; font-size:13px; color:#6b7280; border-bottom:1px solid #eef0f2;">내용</td>
+          <td data-type="광고배너 등록_내용" style="padding:10px 12px; font-size:14px; border-bottom:1px solid #eef0f2;">&nbsp;</td>
+        </tr>
+        <tr>
+          <td style="background-color:#f9fafb; padding:10px 12px; font-size:13px; color:#6b7280; border-bottom:1px solid #eef0f2;">로고 이미지</td>
+          <td data-type="광고배너 등록_로고이미지파일" style="padding:10px 12px; font-size:12px; word-break:break-all; border-bottom:1px solid #eef0f2;">&nbsp;</td>
+        </tr>
+        <tr>
+          <td style="background-color:#f9fafb; padding:10px 12px; font-size:13px; color:#6b7280; border-bottom:1px solid #eef0f2;">배경색</td>
+          <td data-type="광고배너 등록_배경색" style="padding:10px 12px; font-size:14px; border-bottom:1px solid #eef0f2;">&nbsp;</td>
+        </tr>
+        <tr>
+          <td style="background-color:#f9fafb; padding:10px 12px; font-size:13px; color:#6b7280; border-bottom:1px solid #eef0f2;">이동 링크</td>
+          <td data-type="광고배너 등록_이동 링크" style="padding:10px 12px; font-size:13px; word-break:break-all; border-bottom:1px solid #eef0f2;">&nbsp;</td>
+        </tr>
+        <tr>
+          <td style="background-color:#f9fafb; padding:10px 12px; font-size:13px; color:#6b7280;">배너 운영 기간</td>
+          <td data-type="광고배너 등록_배너운영기간" style="padding:10px 12px; font-size:14px;">&nbsp;</td>
+        </tr>
+      </tbody>
+    </table>
 
-<p style="line-height:2;">
-  <span style="font-size:24px;"><b>2. 광고 배너 등록</b></span>
-</p>
-<p data-type="광고배너_계약여부"></p>
-<table class="table table-bordered" style="width:100%; text-align:center;">
-  <tbody>
-    <tr>
-      <td style="background-color:#f9f9f9;">제목</td>
-      <td data-type="광고배너 등록_제목">&nbsp;</td>
-    </tr>
-    <tr>
-      <td style="background-color:#f9f9f9;">내용</td>
-      <td data-type="광고배너 등록_내용">&nbsp;</td>
-    </tr>
-    <tr>
-      <td style="background-color:#f9f9f9;">로고 이미지</td>
-      <td data-type="광고배너 등록_로고이미지파일">&nbsp;</td>
-    </tr>
-    <tr>
-      <td style="background-color:#f9f9f9;">배경색</td>
-      <td data-type="광고배너 등록_배경색">&nbsp;</td>
-    </tr>
-    <tr>
-      <td style="background-color:#f9f9f9;">이동 링크</td>
-      <td data-type="광고배너 등록_이동 링크">&nbsp;</td>
-    </tr>
-    <tr>
-      <td style="background-color:#f9f9f9;">배너 운영 기간</td>
-      <td data-type="광고배너 등록_배너운영기간">&nbsp;</td>
-    </tr>
-  </tbody>
-</table>
+    <!-- 3. 소셜 발행 -->
+    <p style="margin:0 0 8px; font-size:16px; font-weight:700; color:#111827; border-left:4px solid #ec4899; padding-left:10px;">
+      3. 소셜 발행
+      <a href="https://business.facebook.com/latest/home?business_id=919715559676223&asset_id=514834018372928" style="font-size:11px; font-weight:500; color:#2563eb; margin-left:6px;">[META 바로가기]</a>
+    </p>
+    <p style="margin:0 0 12px; font-size:12px; color:#6b7280;">1분 전에 뜬 따끈한 즉시지원 공고 배달드립니다♨️ 오직 진학프로에서만 지원 가능!</p>
 
-<br><br>
+    <div style="background-color:#fdf2f8; border:1px solid #fbcfe8; border-radius:8px; padding:16px; margin-bottom:8px;">
+      <p data-type="소셜발행_기관명_공고명" style="margin:0 0 6px; font-size:14px; font-weight:600; color:#111827;"><span>&nbsp;</span></p>
+      <p data-type="소셜발행_facebook링크" style="margin:0 0 14px; font-size:12px; color:#2563eb; word-break:break-all;"><span>&nbsp;</span></p>
+      <table style="width:100%; border-collapse:collapse;">
+        <tbody>
+          <tr>
+            <td style="padding:4px 0; font-size:13px; color:#6b7280; width:76px; vertical-align:top;">모집전공</td>
+            <td style="padding:4px 0; font-size:13px; color:#111827;"><span data-type="소셜발행_모집전공">&nbsp;</span></td>
+          </tr>
+          <tr>
+            <td style="padding:4px 0; font-size:13px; color:#6b7280; vertical-align:top;">지원자격</td>
+            <td style="padding:4px 0; font-size:13px; color:#111827;"><span data-type="소셜발행_학력">&nbsp;</span></td>
+          </tr>
+          <tr>
+            <td style="padding:4px 0; font-size:13px; color:#6b7280; vertical-align:top;">접수마감</td>
+            <td style="padding:4px 0; font-size:13px; color:#111827;">
+              <span data-type="소셜발행_접수마감일">&nbsp;</span>
+              <span data-type="소셜발행_DDAY" style="margin-left:6px; background-color:#fee2e2; color:#b91c1c; font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px;">&nbsp;</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:4px 0; font-size:13px; color:#6b7280; vertical-align:top;">근무지역</td>
+            <td style="padding:4px 0; font-size:13px; color:#111827;"><span data-type="소셜발행_지역">&nbsp;</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-<p style="line-height:2;">
-  <span style="font-size:24px;"><b>3. 소셜 발행</b></span>
-  <span style="font-size:15px;"> <a href="https://business.facebook.com/latest/home?business_id=919715559676223&asset_id=514834018372928"> [META 바로가기] </a>
-</p>
+    <table style="border-collapse:collapse; margin-bottom:24px;">
+      <tr>
+        <td style="font-size:11px; color:#9ca3af; padding:0;">소셜발행 공고ID&nbsp;</td>
+        <td data-type="소셜발행_공고ID" style="font-size:11px; color:#9ca3af; padding:0;">&nbsp;</td>
+      </tr>
+    </table>
 
-<!-- [소셜 발행] 블록 교체 -->
-<p style="line-height:2;">
-  <span style="font-size:15px;">1분 전에 뜬 따끈한 즉시지원 공고 배달드립니다♨️</span> <br> <span> 오직 진학프로에서만 지원 가능! </span>
-</p>
+    <p style="margin:0 0 24px; font-size:12px; color:#6b7280; line-height:1.6;">진학프로(@jinhakpro) 팔로우하고 석사·박사를 위한 고급 채용 정보를 받아 보세요.</p>
 
-<p data-type="소셜발행_기관명_공고명" style="line-height:2;" ><span style="font-size:15px;">&nbsp;</span></p>
-<p data-type="소셜발행_facebook링크" style="line-height:2;"><span style="font-size:15px;">&nbsp;</span></p>
+    <table style="width:100%; border-collapse:collapse;">
+      <tbody>
+        <tr>
+          <td style="background-color:#e8f2fd; padding:14px; border-radius:8px; text-align:center; font-size:13px; font-weight:600; color:#1d4ed8;">캐치 공고등록도 잊지 마세요 ^^</td>
+        </tr>
+      </tbody>
+    </table>
 
-<p style="line-height:2;">
-  <span style="font-size:15px;">· 모집전공: </span>
-  <span data-type="소셜발행_모집전공" style="font-size:15px;">&nbsp;</span><br>
-  <span style="font-size:15px;">· 지원자격: </span>
-  <span data-type="소셜발행_학력" style="font-size:15px;">&nbsp;</span><br>
-  <span style="font-size:15px;">· 접수마감: </span>
-  <span data-type="소셜발행_접수마감일" style="font-size:15px;">&nbsp;</span><br>
-  <span style="font-size:15px;">· 근무지역: </span>
-  <span data-type="소셜발행_지역" style="font-size:15px;">&nbsp;</span>
-</p>
-
-<p style="line-height:2;">
-  <span style="font-size:15px;">진학프로(@jinhakpro) 팔로우하고 석사·박사를 위한 고급 채용 정보를 받아 보세요.</span>
-</p>
-
-
-<br><br>
-
-<table class="table table-bordered" style="width:100%; text-align:center;">
-  <tbody>
-    <tr style="background-color:#e8f2fd;">
-      <td>캐치 공고등록도 잊지 마세요 ^^</td>
-    </tr>
-  </tbody>
-</table>
-
-
+  </div>
+</div>
+</body>
 </html>
 `;
 
